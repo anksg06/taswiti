@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Tajawal", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:root {
+  --a1: #6f7bd9;
+  --a2: #8a97e0;
+  --a3: #6ba8c4;
+}
+[data-accent="emerald"] {
+  --a1: #57b294;
+  --a2: #6fc0a6;
+  --a3: #a3c98a;
+}
+[data-accent="rose"] {
+  --a1: #b26f8e;
+  --a2: #c485a3;
+  --a3: #d49b6a;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: #f8fafc;
+}
+
+.dark body {
+  background: #020617;
+  color-scheme: dark;
+}
+
+::selection {
+  background: var(--a1);
+  color: #fff;
+}
+
+/* ---------- Accent helpers ---------- */
+.accent-fill {
+  background: var(--a1);
+}
+.accent-text {
+  color: var(--a1);
+}
+.accent-border {
+  border-color: var(--a1);
+}
+.accent-soft {
+  background: color-mix(in srgb, var(--a1) 14%, transparent);
+  border-color: var(--a1);
+}
+.btn-primary {
+  background: linear-gradient(to left, var(--a1), var(--a2));
+}
+.btn-success {
+  background: linear-gradient(to left, #57b294, #6fc0a6);
+}
+.logo-grad {
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+}
+.text-gradient {
+  background: linear-gradient(90deg, var(--a1) 0%, var(--a2) 50%, var(--a3) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Motion ---------- */
+@keyframes blob-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(40px, -50px) scale(1.12);
+  }
+  66% {
+    transform: translate(-30px, 30px) scale(0.92);
+  }
+}
+.animate-blob {
+  animation: blob-float 20s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-pop {
+  animation: pop 0.35s cubic-bezier(0.18, 1.25, 0.4, 1) both;
+}
+
+.d-1 {
+  animation-delay: 0.06s;
+}
+.d-2 {
+  animation-delay: 0.12s;
+}
+.d-3 {
+  animation-delay: 0.18s;
+}
+
+/* ---------- Surfaces ---------- */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.dark .glass {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(255, 255, 255, 0.08);
+}
