@@ -6,7 +6,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "polls.db"
 LOG_DIR = BASE_DIR / "logs"
 
-DATABASE_URL = f"sqlite:///{DB_PATH}"
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 POLL_TITLE_MAX = 120
 POLL_OPTIONS_MIN = 2
