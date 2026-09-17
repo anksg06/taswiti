@@ -1,10 +1,9 @@
 import json
-import sqlite3
 import time
 
 from fastapi import APIRouter, Header, HTTPException, status
 
-from ..database import get_conn
+from ..database import IntegrityError, execute, get_conn
 from ..logging import logger
 
 router = APIRouter(prefix="/api/polls", tags=["votes"])
@@ -24,14 +23,14 @@ def submit_vote(
     now = int(time.time())
     try:
         with get_conn() as conn:
-            poll = conn.execute(
-                "SELECT id, options, expires_at FROM polls WHERE id = ?", (poll_id,)
+            poll = execute(
+                conn, "SELECT id, options, expires_at FROM polls WHERE id = ?", (poll_id,)
             ).fetchone()
             if poll is None:
                 raise HTTPException(status_code=404, detail="Poll not found")
             if now >= poll["expires_at"]:
                 log.info("poll_expired_purged id=%s", poll_id)
-                conn.execute("DELETE FROM polls WHERE id = ?", (poll_id,))
+                execute(conn, "DELETE FROM polls WHERE id = ?", (poll_id,))
                 conn.commit()
                 raise HTTPException(status_code=410, detail="Poll expired")
 
@@ -39,12 +38,13 @@ def submit_vote(
             if option_index >= len(options):
                 raise HTTPException(status_code=422, detail="option_index out of range")
 
-            conn.execute(
+            execute(
+                conn,
                 "INSERT INTO votes (poll_id, option_index, client_token, created_at)"
                 " VALUES (?, ?, ?, ?)",
                 (poll_id, option_index, x_client_token, now),
             )
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         log.warning("duplicate_vote poll_id=%s", poll_id)
         raise HTTPException(status_code=409, detail="Already voted")
 
