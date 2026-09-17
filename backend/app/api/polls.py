@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, Response, status
 
 from .. import config
-from ..database import get_conn, purge_expired
+from ..database import execute, get_conn, purge_expired
 from ..logging import logger
 
 router = APIRouter(prefix="/api/polls", tags=["polls"])
@@ -39,13 +39,13 @@ def _serialize_poll(row, counts) -> dict:
 
 
 def _fetch_live(conn, poll_id: str, now: int):
-    row = conn.execute("SELECT * FROM polls WHERE id = ?", (poll_id,)).fetchone()
+    row = execute(conn, "SELECT * FROM polls WHERE id = ?", (poll_id,)).fetchone()
     if row is None:
         purge_expired(conn, now)
         raise HTTPException(status_code=404, detail="Poll not found")
     if now >= row["expires_at"]:
         log.info("poll_expired_purged id=%s", poll_id)
-        conn.execute("DELETE FROM polls WHERE id = ?", (poll_id,))
+        execute(conn, "DELETE FROM polls WHERE id = ?", (poll_id,))
         conn.commit()
         raise HTTPException(status_code=410, detail="Poll expired")
     return row
@@ -105,7 +105,8 @@ def create_poll(payload: dict) -> dict:
     now = int(time.time())
     expires_at = now + duration_seconds
     with get_conn() as conn:
-        conn.execute(
+        execute(
+            conn,
             "INSERT INTO polls (id, title, options, visibility, expires_at, created_at)"
             " VALUES (?, ?, ?, ?, ?, ?)",
             (poll_id, title.strip(), json.dumps(cleaned), visibility, expires_at, now),
@@ -128,10 +129,11 @@ def list_polls() -> list[dict]:
     now = int(time.time())
     with get_conn() as conn:
         purge_expired(conn, now)
-        rows = conn.execute(
+        rows = execute(
+            conn,
             """
             SELECT p.id, p.title, p.created_at,
-                   COALESCE(SUM(v.id IS NOT NULL), 0) AS total_votes
+                   COUNT(v.id) AS total_votes
             FROM polls p
             LEFT JOIN votes v ON v.poll_id = p.id
             WHERE p.visibility = 'public' AND p.expires_at > ?
@@ -160,7 +162,8 @@ def get_poll(poll_id: str, response: Response) -> dict:
         row = _fetch_live(conn, poll_id, now)
         counts = {
             r["option_index"]: r["c"]
-            for r in conn.execute(
+            for r in execute(
+                conn,
                 "SELECT option_index, COUNT(*) AS c FROM votes WHERE poll_id = ? GROUP BY option_index",
                 (poll_id,),
             ).fetchall()
