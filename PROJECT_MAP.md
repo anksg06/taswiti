@@ -96,10 +96,20 @@ votes(id INTEGER PK, poll_id TEXT FK, option_index INT, client_token TEXT,
 
 **لا توجد بنود معلقة.** المنتج مكتمل والتوثيق في حالة مُزامنة.
 
+## [DEPLOYMENT RECORD]
+- **المصدر:** GitHub `https://github.com/anksg06/taswiti` (الملفات المرتفعة عبر Contents API ثم تحديثات لاحقة).
+- **Backend (حي):** Render Web Service `taswiti-backend` — `https://taswiti-backend.onrender.com` (Python 3.13, Free plan، uvicorn، `rootDir: backend`، blueprint `render.yaml` مع `autoDeploy: true`).
+- **قاعدة بيانات دائمة:** Neon Postgres (مجاني، لا تنتهي) عبر متغير بيئة `DATABASE_URL` على Render — يعالج اختفاء الاستطلاعات بعد سبات Render (كانت تُصفَّر على القرص المؤقت). الرمز يدعم الاثنين: محلياً SQLite بلا `DATABASE_URL`، وفي النشر Postgres (روابط `?→%s` عبر `execute()`، `IntegrityError` يغطي `UniqueViolation`، `COUNT(v.id)` بدل `SUM(id IS NOT NULL)`).
+- **Frontend (حي):** Vercel `https://taswiti.vercel.app` (Root Directory: `frontend`، Vite، متغير `VITE_API_URL` → رابط Render بلا شرطة زائدة).
+  - **إصلاح 404 للروابط الخاصة:** `frontend/vercel.json` يعيد توجيه `/(.*)` إلى `index.html` كي يعمل مسار `/polls/<id>` مع راوتر SPA.
+- **E2E على الخادم المنشور:** create 201 ✅ · votes 201 ×3 ✅ · detail total=3, A=2(66.7%), B=1(33.3%) ✅.
+- حدود الخطة المجانية: Render ينام بعد 15 دقيقة (+~دقيقة إيقاظ)؛ البيانات الآن دائمة في Neon.
+
 ## [VERIFICATION RECORD]
 
 - `python verify_api.py` → **25 passed, 0 failed** (يشمل: عام/خاص، مدة مخصصة بالثواني/422 للحدود، انتهاء → 410 → حذف نهائي → 404).
-- `npm run build` → **built in 398ms** (0 أخطاء).
+- `npm run build` → **built in 558ms** (0 أخطاء).
+- فحص مسار Postgres محلياً على Neon: `init_db` OK، إنشاء خاص 201، إخفاء من القائمة العامة، تصويت 201، تكرار تصويت 409 ("Already voted") — كلها ✅ قبل النشر.
 - رحلة الـ Proxy: مدة 90 ثانية مضبوطة (expires_at - created = 90)؛ خاص مخفي + قابل للتصويت بالرابط ✅.
 - فحص السجل: **0** حدوث لأي نمط توكن.
 - رحلة المتصفح عبر الـ Proxy: إنشاء → تصويت (201) → تفاصيل (شاي 100%) ✅.
